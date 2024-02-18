@@ -4,10 +4,10 @@ from time import time
 from math import sqrt
 from executiontime import printexecutiontime, LIGHBLUE
 
-from tables import ind_O,ind_Z, k3_lookup,k5_lookup
+from tables import ind_O,ind_Z
 from dct import calc_dct, calc_idct
 from quant import quantize, dequantize
-from encode import dc_encode, ac_encode
+from encode import dc_encode, ac_encode,dc_decode, ac_decode
 from stream import Stream, bin_to_byte
 # IDEA: Separate the processing in threads and get back the data in order
 
@@ -97,12 +97,12 @@ def decode_image():
         dc_detected = 0
         while len(block_zigzag) < 64:
             if(len(block_zigzag) < 1):
-                dc_block = k3_lookup(stream)
+                dc_block = dc_decode(stream)
                 dc_dpcm = dc_dpcm + dc_block
                 block_zigzag += [dc_dpcm]
                 continue; # first dc achieved, end the iteration here
 
-            (zeroes_counter, ac_block) = k5_lookup(stream)
+            (zeroes_counter, ac_block) = ac_decode(stream)
             
             # Every AC block ends with (0,0) huffman code
             end_of_block = zeroes_counter == 0 and ac_block == 0

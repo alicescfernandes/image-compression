@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
-from tables import K3,K5, quality_factor
-from bin_utils import  get_bin_repr, bin_string_to_arr
+from tables import K3,K5, quality_factor, reverse_K3, reverse_K5, lookup_table
+from bin_utils import  get_bin_repr, bin_string_to_arr,bit_array_to_int
 from executiontime import printexecutiontime, LIGHBLUE
 
 
@@ -56,3 +56,45 @@ def ac_encode(ac_coef):
     rlc_code_huffman = rlc_code_huffman + bin_string_to_arr(K5[(0, 0)])
 
     return rlc_code_huffman
+
+# Uses function above to return any K3 table value in int
+# input: Stream
+# output: int
+def dc_decode(stream):
+    size = False
+    find = lookup_table(reverse_K3)
+    keys = []
+    while(size is False):
+        key = stream.get_bit()
+        keys += [key]
+        size = find(key)
+    
+    code = []
+    # todo: get bits by size without while
+    while size > 0:
+        bit = stream.get_bit()
+        code += [bit]
+        size = size - 1
+    
+    byte = bit_array_to_int(code, True)
+    return byte
+
+def ac_decode(stream):
+    k5_value = False
+    find = lookup_table(reverse_K5)
+    keys = []
+    while(k5_value is False):
+        key = stream.get_bit()
+        keys += [key]
+        k5_value = find(key)
+
+    (zeroes_counter, size) = k5_value
+
+    code = []
+    while size > 0:
+        bit = stream.get_bit()
+        code += [bit]
+        size = size - 1
+    
+    byte = bit_array_to_int(code, True)
+    return (zeroes_counter,byte)
