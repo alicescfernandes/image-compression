@@ -289,10 +289,7 @@ def k5_lookup(stream):
         size = size - 1
     
     byte = bit_array_to_int(code, True)
-    print("byte", byte)
-    print("zeroes_counter", zeroes_counter)
-
-    return 0
+    return (zeroes_counter,byte)
 
 
 # zig-zag order

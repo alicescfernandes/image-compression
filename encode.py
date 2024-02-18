@@ -33,7 +33,18 @@ def ac_encode(ac_coef):
     rlc_code_huffman = []
 
     n_arr = []
-    # this is slow
+
+
+    # remove all zeroes after the last non-zero code
+    # we dont need to encode zeroes, the decoder can pad blocks on decoding, and this logic saves processing time
+    ac_reverse = ac_coef[::-1]
+    ac_reverse = [v != 0 for v in ac_reverse ]
+    last_true = len(ac_reverse) - ac_reverse.index(True)
+
+    if(last_true > 0):
+        ac_coef = ac_coef[0:last_true]
+
+
     for n in ac_coef:
         n_arr += [n]
         if(n == 0):
@@ -42,13 +53,13 @@ def ac_encode(ac_coef):
                 zeroes_counter = 0;
             else:
                 zeroes_counter = zeroes_counter+1;
+        
         else:
             (size, binary_repr) = get_bin_repr(n)
             rlc_code_huffman = rlc_code_huffman + bin_string_to_arr(K5[(zeroes_counter, size)]) + binary_repr
             zeroes_counter = 0
 
-            print("AC",size,n, bin_string_to_arr(K5[(zeroes_counter, size)]), binary_repr)
-
+            print("AC",n,zeroes_counter, bin_string_to_arr(K5[(zeroes_counter, size)]), binary_repr)
     print(n_arr)
     rlc_code_huffman = rlc_code_huffman + bin_string_to_arr(K5[(0, 0)])
 

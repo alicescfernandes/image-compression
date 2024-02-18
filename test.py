@@ -74,7 +74,7 @@ def encode_image(image):
     output_file.write(bytearray(bytes_array))
 
             
-#encode_image(y)
+# encode_image(y)
 
 # TODO: iterate per each 64 codes
 # After each block end, go to next
@@ -91,15 +91,35 @@ def decode_image():
 
     # First byte is the trailing zeroes. Cut them from the actual bit stream or exclude them from the end (if end of file is reached)
     trailing_zeros = get_bits(stream,8)
-    print("trailing_zeros",trailing_zeros)
     
     dc_dpcm = 0
-    codes_detected = 0
     
-    # Iterate per each 64 codes
+    # Iterate until (0,0)
     # Each block starts with the DC component and ends with the (0,0) AC. Each code is unique
-    #while codes_detected < 64
-    while codes_detected < 1:
+    for k in range(4):
+        block = []
+        dc_detected = 0
+        while len(block) < 64:
+            if(dc_detected < 1):
+                dc_block = k3_lookup(stream)
+                block += [dc_block]
+                dc_detected += 1
+            else:
+                (zeroes_counter, ac_block) = k5_lookup(stream)
+            
+                # Every AC block ends with (0,0) huffman code
+                if(zeroes_counter == 0 and ac_block == 0):
+                    # add the remaining zeroes
+                    trailing_zeros_block = [0] * (64 - len(block))
+                    block += trailing_zeros_block
+                    print(block)
+                    # TODO: Quantization
+                else:
+                    zeroes = [0] * zeroes_counter
+                    block += zeroes + [ac_block]
+
+
+
         # read until detect code
         # it was better if we had the huffman as tree, but we only have it as values of an object
         # another solution would to convert it to bytes and check if the byte exists, since they are unique (NOPE, SOME SYMBOLS ARE 15 LENGTH)
@@ -108,11 +128,6 @@ def decode_image():
         # first code is always AC
         # rest of codes are DC
         # AC uses run length encoding, so keep it to decode the next ac's
-        
-        dc_block = k3_lookup(stream)
-        ac_block = k5_lookup(stream)
-        
-        codes_detected += 1
     
 
 decode_image()
