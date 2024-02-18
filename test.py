@@ -106,9 +106,10 @@ def decode_image():
                 continue; # first dc achieved, end the iteration here
 
             (zeroes_counter, ac_block) = k5_lookup(stream)
-            end_of_block = zeroes_counter == 0 and ac_block == 0
             
             # Every AC block ends with (0,0) huffman code
+            end_of_block = zeroes_counter == 0 and ac_block == 0
+            
             if(end_of_block is False):
                 zeroes = [0] * zeroes_counter
                 block += zeroes + [ac_block]
