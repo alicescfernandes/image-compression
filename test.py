@@ -100,23 +100,25 @@ def decode_image():
         block = []
         dc_detected = 0
         while len(block) < 64:
-            if(dc_detected < 1):
+            if(len(block) < 1):
                 dc_block = k3_lookup(stream)
                 block += [dc_block]
-                dc_detected += 1
-            else:
-                (zeroes_counter, ac_block) = k5_lookup(stream)
+                continue; # first dc achieved, end the iteration here
+
+            (zeroes_counter, ac_block) = k5_lookup(stream)
+            end_of_block = zeroes_counter == 0 and ac_block == 0
             
-                # Every AC block ends with (0,0) huffman code
-                if(zeroes_counter == 0 and ac_block == 0):
-                    # add the remaining zeroes
-                    trailing_zeros_block = [0] * (64 - len(block))
-                    block += trailing_zeros_block
-                    print(block)
-                    # TODO: Quantization
-                else:
-                    zeroes = [0] * zeroes_counter
-                    block += zeroes + [ac_block]
+            # Every AC block ends with (0,0) huffman code
+            if(end_of_block is False):
+                zeroes = [0] * zeroes_counter
+                block += zeroes + [ac_block]
+                continue; # end the iteration here. its not end of block
+
+            # end of block here. add the remaining zeroes and undo zigzag
+            trailing_zeros_block = [0] * (64 - len(block))
+            block += trailing_zeros_block
+            print(block)
+            # TODO: Undo zigzag
 
 
 

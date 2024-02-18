@@ -34,7 +34,6 @@ def ac_encode(ac_coef):
 
     n_arr = []
 
-
     # remove all zeroes after the last non-zero code
     # we dont need to encode zeroes, the decoder can pad blocks on decoding, and this logic saves processing time
     ac_reverse = ac_coef[::-1]
@@ -43,7 +42,6 @@ def ac_encode(ac_coef):
 
     if(last_true > 0):
         ac_coef = ac_coef[0:last_true]
-
 
     for n in ac_coef:
         n_arr += [n]
