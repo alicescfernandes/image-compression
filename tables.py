@@ -267,7 +267,6 @@ def k3_lookup(stream):
         code += [bit]
         size = size - 1
     
-    print("key", keys)
     byte = bit_array_to_int(code, True)
     return byte
 

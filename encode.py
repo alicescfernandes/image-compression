@@ -21,7 +21,6 @@ def dc_encode(dc_coef):
         (size, binary_repr) = get_bin_repr(dc_coef)
         K3_code = K3[size]
         dc_coded += K3_code +binary_repr
-    print("DC",size,dc_coef, binary_repr)
     return dc_coded
 
 # Encodes RLC and huffman
@@ -31,8 +30,6 @@ def ac_encode(ac_coef):
 
     rlc_code_raw = []
     rlc_code_huffman = []
-
-    n_arr = []
 
     # remove all zeroes after the last non-zero code
     # we dont need to encode zeroes, the decoder can pad blocks on decoding, and this logic saves processing time
@@ -44,7 +41,6 @@ def ac_encode(ac_coef):
         ac_coef = ac_coef[0:last_true]
 
     for n in ac_coef:
-        n_arr += [n]
         if(n == 0):
             if(zeroes_counter == 15):
                 rlc_code_huffman = rlc_code_huffman + bin_string_to_arr(K5[(15, 0)])
@@ -57,8 +53,6 @@ def ac_encode(ac_coef):
             rlc_code_huffman = rlc_code_huffman + bin_string_to_arr(K5[(zeroes_counter, size)]) + binary_repr
             zeroes_counter = 0
 
-            print("AC",n,zeroes_counter, bin_string_to_arr(K5[(zeroes_counter, size)]), binary_repr)
-    print(n_arr)
     rlc_code_huffman = rlc_code_huffman + bin_string_to_arr(K5[(0, 0)])
 
     return rlc_code_huffman
