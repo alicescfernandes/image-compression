@@ -32,9 +32,10 @@ def ac_encode(ac_coef):
     rlc_code_raw = []
     rlc_code_huffman = []
 
+    n_arr = []
     # this is slow
     for n in ac_coef:
-
+        n_arr += [n]
         if(n == 0):
             if(zeroes_counter == 15):
                 rlc_code_huffman = rlc_code_huffman + bin_string_to_arr(K5[(15, 0)])
@@ -46,9 +47,9 @@ def ac_encode(ac_coef):
             rlc_code_huffman = rlc_code_huffman + bin_string_to_arr(K5[(zeroes_counter, size)]) + binary_repr
             zeroes_counter = 0
 
-            print("AC",size,n, binary_repr)
+            print("AC",size,n, bin_string_to_arr(K5[(zeroes_counter, size)]), binary_repr)
 
-
+    print(n_arr)
     rlc_code_huffman = rlc_code_huffman + bin_string_to_arr(K5[(0, 0)])
 
     return rlc_code_huffman

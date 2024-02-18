@@ -255,8 +255,10 @@ def lookup_table(table):
 def k3_lookup(stream):
     size = False
     find = lookup_table(reverse_K3)
+    keys = []
     while(size is False):
         key = stream.get_bit()
+        keys += [key]
         size = find(key)
     
     code = []
@@ -265,18 +267,31 @@ def k3_lookup(stream):
         code += [bit]
         size = size - 1
     
+    print("key", keys)
     byte = bit_array_to_int(code, True)
     return byte
 
 def k5_lookup(stream):
     k5_value = False
     find = lookup_table(reverse_K5)
+    keys = []
     while(k5_value is False):
         key = stream.get_bit()
+        keys += [key]
         k5_value = find(key)
-    
+
     (zeroes_counter, size) = k5_value
-    print(zeroes_counter)
+
+    code = []
+    while size > 0:
+        bit = stream.get_bit()
+        code += [bit]
+        size = size - 1
+    
+    byte = bit_array_to_int(code, True)
+    print("byte", byte)
+    print("zeroes_counter", zeroes_counter)
+
     return 0
 
 

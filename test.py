@@ -74,7 +74,7 @@ def encode_image(image):
     output_file.write(bytearray(bytes_array))
 
             
-# encode_image(y)
+#encode_image(y)
 
 # TODO: iterate per each 64 codes
 # After each block end, go to next
@@ -84,8 +84,6 @@ def get_bits(stream, size):
     byte_from_bin = [stream.get_bit() for i in range(size)]
     byte_from_bin = bin_to_byte(byte_from_bin)
     return byte_from_bin
-
-
 
 def decode_image():
     input_file = open(output_name, mode="rb")
@@ -101,7 +99,7 @@ def decode_image():
     # Iterate per each 64 codes
     # Each block starts with the DC component and ends with the (0,0) AC. Each code is unique
     #while codes_detected < 64
-    while codes_detected < 2:
+    while codes_detected < 1:
         # read until detect code
         # it was better if we had the huffman as tree, but we only have it as values of an object
         # another solution would to convert it to bytes and check if the byte exists, since they are unique (NOPE, SOME SYMBOLS ARE 15 LENGTH)
@@ -114,13 +112,10 @@ def decode_image():
         dc_block = k3_lookup(stream)
         ac_block = k5_lookup(stream)
         
-        print(dc_block)
         codes_detected += 1
     
 
 decode_image()
-
-[1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0]
 
 
 # Convert back to RGB
