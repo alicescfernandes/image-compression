@@ -42,6 +42,26 @@ def int_to_bit_array(number, size=8):
         padded_msg = [0] * padding_bytes + byte # np.concatenate((msg, np.zeros(padding_bytes, dtype=int)))   
         return padded_msg
 
+
+# TODO: There is probably a better way to do this
+# TODO: https://pypi.org/project/bitarray/ -> this is faster than this
+def bit_array_to_int(bit_arr, with_negative=False):
+        is_negative = False
+
+        if(len(bit_arr) < 1):
+                return 0
+
+        if(with_negative is True and bit_arr[0] == 0 ):
+                is_negative = True
+
+                # 0 - 1 -> -1, abs(-1) -> 1
+                # Cheap way to invert the binary ode
+                bit_arr = [ abs(v-1) for v in bit_arr]
+
+        reversed_bit_arr = bit_arr[::-1]
+        bit_int = sum([ value * pow(2, count) for count, value in enumerate(reversed_bit_arr) ])
+
+        return bit_int * -1 if is_negative else bit_int
 if __name__ == '__main__':
 
 

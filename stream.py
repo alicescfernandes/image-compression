@@ -12,7 +12,6 @@ def bin_to_byte(value):
 
 def byte_to_bin(value):
     bit_repr = []
-    print(value)
 
     while(value > 0):
         remainder = value % 2
@@ -66,7 +65,6 @@ class Stream():
         leading_zeroes =  [0] * (8 - len(bit_repr))
         self.buffer = leading_zeroes+bit_repr[::-1]
 
-        print("to_bin",self.buffer, leading_zeroes)
     
     def convert_to_byte(self, value):
 

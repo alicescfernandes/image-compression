@@ -4,7 +4,7 @@ from time import time
 from math import sqrt
 from executiontime import printexecutiontime, LIGHBLUE
 
-from tables import ind_O,ind_Z, lookup_table, reverse_K3
+from tables import ind_O,ind_Z, k3_lookup,k5_lookup
 from dct import calc_dct, calc_idct
 from quant import quantize, dequantize
 from encode import dc_encode, ac_encode
@@ -74,39 +74,34 @@ def encode_image(image):
     output_file.write(bytearray(bytes_array))
 
             
-encode_image(y)
+# encode_image(y)
 
 # TODO: iterate per each 64 codes
 # After each block end, go to next
 
 
-def get_byte(stream):
-    byte_from_bin = [stream.get_bit() for i in range(8)]
+def get_bits(stream, size):
+    byte_from_bin = [stream.get_bit() for i in range(size)]
     byte_from_bin = bin_to_byte(byte_from_bin)
     return byte_from_bin
+
+
 
 def decode_image():
     input_file = open(output_name, mode="rb")
     stream = Stream(input_file, 0)
 
     # First byte is the trailing zeroes. Cut them from the actual bit stream or exclude them from the end (if end of file is reached)
-    trailing_zeros = get_byte(stream)
-    print(trailing_zeros)
+    trailing_zeros = get_bits(stream,8)
+    print("trailing_zeros",trailing_zeros)
+    
+    dc_dpcm = 0
+    codes_detected = 0
+    
     # Iterate per each 64 codes
     # Each block starts with the DC component and ends with the (0,0) AC. Each code is unique
-    
-    # find first DC code
-    value = False
-    find = lookup_table(reverse_K3)
-    while(value is False):
-        key = stream.get_bit()
-        value = find(key)
-    
-    print(value)
-    
-    """
-    codes_detected = 0
-    while codes_detected < 64
+    #while codes_detected < 64
+    while codes_detected < 2:
         # read until detect code
         # it was better if we had the huffman as tree, but we only have it as values of an object
         # another solution would to convert it to bytes and check if the byte exists, since they are unique (NOPE, SOME SYMBOLS ARE 15 LENGTH)
@@ -115,7 +110,13 @@ def decode_image():
         # first code is always AC
         # rest of codes are DC
         # AC uses run length encoding, so keep it to decode the next ac's
-    """
+        
+        dc_block = k3_lookup(stream)
+        ac_block = k5_lookup(stream)
+        
+        print(dc_block)
+        codes_detected += 1
+    
 
 decode_image()
 

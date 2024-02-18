@@ -1,6 +1,8 @@
 # table K1 - Luminance quantize Matrix  
 import numpy as np
 from functools import partial
+from bin_utils import bit_array_to_int
+
 # quantization table for luminance
 K0 = np.zeros((8, 8))
 K0[0] = [ 16,  11,  10,  16,  24,  40,  51,  61]
@@ -246,6 +248,37 @@ def lookup_table(table):
         return table[filtered_keys[0]]
 
     return partial(find, table_keys, key_accum)
+
+# Uses function above to return any K3 table value in int
+# input: Stream
+# output: int
+def k3_lookup(stream):
+    size = False
+    find = lookup_table(reverse_K3)
+    while(size is False):
+        key = stream.get_bit()
+        size = find(key)
+    
+    code = []
+    while size > 0:
+        bit = stream.get_bit()
+        code += [bit]
+        size = size - 1
+    
+    byte = bit_array_to_int(code, True)
+    return byte
+
+def k5_lookup(stream):
+    k5_value = False
+    find = lookup_table(reverse_K5)
+    while(k5_value is False):
+        key = stream.get_bit()
+        k5_value = find(key)
+    
+    (zeroes_counter, size) = k5_value
+    print(zeroes_counter)
+    return 0
+
 
 # zig-zag order
 zigzag = np.zeros((8, 8))
