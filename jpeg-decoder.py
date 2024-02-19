@@ -1,7 +1,9 @@
+# https://d33wubrfki0l68.cloudfront.net/bdc1363abbd5744200ec5283d4154e55143df86c/8c624/images/decoding_jpeg/jpegrgb_dissected.png
+# https://yasoob.me/posts/understanding-and-writing-jpeg-decoder-in-python/#decoding-the-quantization-table
+
 from struct import unpack
 import codecs
 import numpy as np
-# https://d33wubrfki0l68.cloudfront.net/bdc1363abbd5744200ec5283d4154e55143df86c/8c624/images/decoding_jpeg/jpegrgb_dissected.png
 # from HuffmanTable import HuffmanTable
 from classes.stream import Stream
 from blocks.encode import dc_encode, ac_encode,dc_decode, ac_decode
