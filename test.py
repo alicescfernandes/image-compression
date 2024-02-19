@@ -15,7 +15,7 @@ from bin_utils import int_to_bit_array
 
 input = "sources/balls.tiff"
 # input = "sources/16x16.tiff"
-#input = "sources/flower-luma-gray.jpg"
+# input = "sources/flower-luma-gray.jpg"
 
 # Convert to YCbCr (YUV)
 input_rgb = cv2.imread(input)
@@ -24,23 +24,21 @@ y,cb,cr = cv2.split(img_yuv)
 
 image_shape = input_rgb.shape
 
-# create and 
 output_name = "tmp_file.bin"
-
 
 def encode_header():
     bits = []
-    width = image_shape[0]
-    height = image_shape[1]
+    height = image_shape[0]
+    width = image_shape[1]
     
-    bits_width = int_to_bit_array(width, 16)
     bits_height = int_to_bit_array(height, 16)
+    bits_width = int_to_bit_array(width, 16)
     bits_size = int_to_bit_array(16,8)
     
     end_of_header1 = int_to_bit_array(255)
     end_of_header2 = int_to_bit_array(4)
     
-    bits = bits_width + bits_height
+    bits = bits_height + bits_width
     
     return bits
 
@@ -111,12 +109,8 @@ def encode_image(image):
     bytes_array = [bits_to_bytes.trailing_zeros] + bytes_array
     output_file.write(bytearray(bytes_array))
 
-            
-def get_bits(stream, size):
-    byte_from_bin = [stream.get_bit() for i in range(size)]
-    byte_from_bin = bin_to_byte(byte_from_bin)
-    return byte_from_bin
 
+# shape: : (H, W, D) 
 @printexecutiontime("Decoding Image took {0}", color=LIGHBLUE)
 def decode_image():
     input_file = open(output_name, mode="rb")
@@ -125,9 +119,9 @@ def decode_image():
     trailing_zeros = int.from_bytes(input_file.read(1))
 
     # 2 bytes for width and 2 more for height
-    width = int.from_bytes(input_file.read(2))
     height = int.from_bytes(input_file.read(2))
-    total_blocks = (width // 8) * (height // 8)
+    width = int.from_bytes(input_file.read(2))
+    total_blocks = (height // 8) * (width // 8)
 
     # Keep reference for DC DPCM coding
     dc_dpcm = 0
@@ -135,10 +129,10 @@ def decode_image():
     stream = Stream(input_file, 0)
     # Iterate until (0,0)
     # Each block starts with the DC component and ends with the (0,0) AC. Each code is unique
-    reconstructed_image = np.zeros((width,height))
+    reconstructed_image = np.zeros((height,width))
     current_column = 0
     current_line = 0
-    for k in range(total_blocks): # TODO: Number of blocks & width and height of image
+    for k in range(total_blocks):
         block_zigzag = []
         dc_detected = 0
 
@@ -190,7 +184,7 @@ output_rgb= cv2.merge([y_decoded,cb,cr])
 output_rgb = cv2.cvtColor(output_rgb, cv2.COLOR_YUV2BGR)
 
 # show both images
-numpy_vertical = np.hstack((input_rgb, output_rgb))
+numpy_vertical = np.hstack((input_rgb,output_rgb))
 cv2.imshow("in", numpy_vertical) 
 cv2.waitKey(0) 
 cv2.destroyAllWindows() 
