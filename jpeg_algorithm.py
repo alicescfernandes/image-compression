@@ -8,7 +8,7 @@ from blocks.tables import ind_O,ind_Z
 from blocks.dct import calc_dct, calc_idct
 from blocks.quant import quantize, dequantize
 from blocks.encode import dc_encode, ac_encode,dc_decode, ac_decode
-from stream import Stream
+from classes.stream import Stream
 from bin_utils import int_to_bit_array
 
 # IDEA: Separate the processing in threads and get back the data in order
