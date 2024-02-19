@@ -1,5 +1,6 @@
 # https://d33wubrfki0l68.cloudfront.net/bdc1363abbd5744200ec5283d4154e55143df86c/8c624/images/decoding_jpeg/jpegrgb_dissected.png
 # https://yasoob.me/posts/understanding-and-writing-jpeg-decoder-in-python/#decoding-the-quantization-table
+# https://practicalpython.yasoob.me/chapter10
 
 from struct import unpack
 import codecs
@@ -72,7 +73,8 @@ def parse_quantization_table(quant):
     [destination, *quant_factors] = unpack(">"+table, quant[0:65])    
 
     # affect global variables
-    quant_tables[destination] = np.array(quant_factors).reshape((8,8))
+    print(np.array(quant_factors).reshape((8,8)))
+    quant_tables[destination] = quant_factors
     
 
 def parse_header(header):
@@ -107,11 +109,13 @@ def parse_huffman(data):
     huffman_tables[(huffman_table_type,huffman_table_dest)] = []
 
 def parse_start_of_frame(sof):
-    hdr, height, width, components = unpack(">BHHB",sof[0:6])
+    precision, height, width, components = unpack(">BHHB",sof[0:6])
 
     components_unpack_format = "".join(['b'] * components * 3) # replicates "b" 64 times
     components_unpacked = unpack(">"+components_unpack_format,sof[6:])  #  foramt: [id, sample,quant_table,id, sample,quant_table,id, sample,quant_table]
     quantization_tables_ids = components_unpacked[COMPONENT_QUANT_TABLE::3] # every the third element (index+) every three indexes we have the quant table for the component
+    quantization_tables_samples = components_unpacked[COMPONENT_QUANT_TABLE::2] # every the third element (index+) every three indexes we have the quant table for the component
+    print(precision, components,components_unpacked)
 
     # Affect global variables
     global shape
@@ -119,6 +123,7 @@ def parse_start_of_frame(sof):
 
     global quant_tables_mapping
     quant_tables_mapping = quantization_tables_ids
+    exit()
 
 
 def parse_scan(sof):
@@ -201,27 +206,27 @@ def decode_block(stream, dc_dpcm, quantization_table, block_type, block_size = 8
         
         # Every AC block ends with (0,0) huffman code
         end_of_block = zeroes_counter == 0 and ac_block == 0
-        print(zeroes_counter, ac_block)
         if(end_of_block is False):
             zeroes = [0] * zeroes_counter
             block_zigzag += zeroes + [ac_block]
             continue; # end the iteration here. its not end of block
-        print(2)
+
         # end of block here. add the remaining zeroes and undo zigzag
         trailing_zeros_block = [0] * (total_blocks - len(block_zigzag))
         block_zigzag += trailing_zeros_block
 
-        # Undo zigzag
-        block_zigzag = np.array(block_zigzag).flatten(order='F')
-        block_8x8 = block_zigzag[ind_O].reshape((block_size,block_size),order='F')
+        # Undo quantization before un-zig_zag'ing
+        dequant = dequantize_no_quality(np.array(block_zigzag), quantization_table)
 
-        # Undo quantization
-        dequant = dequantize_no_quality(block_8x8, quantization_table)
+        # Undo zigzag
+        dequant = np.array(dequant).flatten(order='F')
+        block_8x8 = dequant[ind_O].reshape((block_size,block_size),order='F')
 
         # reverse idct
-        original_block = calc_idct(dequant)
+        original_block = calc_idct(block_8x8)
         
         print(original_block)
+
     return dc_dpcm
         #return (original_block, dc_dpcm)
             
