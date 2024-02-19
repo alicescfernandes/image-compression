@@ -5,7 +5,12 @@ import numpy as np
 # from HuffmanTable import HuffmanTable
 from classes.stream import Stream
 from blocks.encode import dc_encode, ac_encode,dc_decode, ac_decode
-
+from blocks.tables import ind_O,ind_Z
+from blocks.dct import calc_dct, calc_idct
+from blocks.quant import quantize, dequantize
+from blocks.encode import dc_encode, ac_encode,dc_decode, ac_decode
+from classes.stream import Stream
+from bin_utils import int_to_bit_array
 
 # todo: make a class out of this
 # todo: only works for luma grayscale
@@ -47,8 +52,9 @@ COMPONENT_QUANT_TABLE = 2
 IMG_WIDTH = 0
 IMG_HEIGHT = 1
 
-f = open("sources/flower-luma-gray.jpg", "rb")
+#f = open("sources/flower-luma-gray.jpg", "rb")
 #f = open("sources/house-rgb-gray.jpg", "rb")
+f = open("sources/16x16.jpg", "rb")
 
 
 quant_tables =  {}
@@ -139,6 +145,48 @@ def parse_image_data(image_data):
     oldlumdccoeff, oldCbdccoeff, oldCrdccoeff = 0, 0, 0
 
     stream = Stream(image_data,0)
+
+    (width, height) = shape
+    total_blocks = (height // 8) * (width // 8)
+    
+    block_zigzag = []
+    dc_detected = 0
+    dc_dpcm = 0
+    while len(block_zigzag) < (8*8):
+        if(len(block_zigzag) < 1):
+            dc_block = dc_decode(stream)
+            dc_dpcm = dc_dpcm + dc_block
+            block_zigzag += [dc_dpcm]
+            continue; # first dc achieved, end the iteration here
+
+        (zeroes_counter, ac_block) = ac_decode(stream)
+        
+        # Every AC block ends with (0,0) huffman code
+        end_of_block = zeroes_counter == 0 and ac_block == 0
+        
+        if(end_of_block is False):
+            zeroes = [0] * zeroes_counter
+            block_zigzag += zeroes + [ac_block]
+            continue; # end the iteration here. its not end of block
+
+        # end of block here. add the remaining zeroes and undo zigzag
+        trailing_zeros_block = [0] * (64 - len(block_zigzag))
+        block_zigzag += trailing_zeros_block
+
+        # Undo zigzag
+        block_zigzag = np.array(block_zigzag).flatten(order='F')
+        block_8x8 = block_zigzag[ind_O].reshape((8,8),order='F')
+
+        # Undo quantization
+        dequant = dequantize(block_8x8)
+
+        # reverse idct
+        original_block = calc_idct(dequant)
+        
+        print(original_block)
+    
+
+    """
     dc_block = dc_decode(stream)
 
     ac_block1 = ac_decode(stream)
@@ -149,10 +197,10 @@ def parse_image_data(image_data):
     print(quant_tables)
     print(quant_tables_mapping)
     print("dc_block",dc_block)
-    
+
     print("ac_block",ac_block1)
     print("ac_block",ac_block2)
-
+    """
 
     #code = huffman_tables[('0','0')].GetCode(st)
     #bits = st.GetBitN(code)
