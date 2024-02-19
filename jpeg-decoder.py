@@ -133,7 +133,6 @@ def DecodeNumber(code, bits):
     else:
         return bits-(2*l-1)
 
-
 def parse_image_data(image_data):
     
     # remove \x00 after \xff
@@ -149,41 +148,7 @@ def parse_image_data(image_data):
     (width, height) = shape
     total_blocks = (height // 8) * (width // 8)
     
-    block_zigzag = []
-    dc_detected = 0
-    dc_dpcm = 0
-    while len(block_zigzag) < (8*8):
-        if(len(block_zigzag) < 1):
-            dc_block = dc_decode(stream)
-            dc_dpcm = dc_dpcm + dc_block
-            block_zigzag += [dc_dpcm]
-            continue; # first dc achieved, end the iteration here
-
-        (zeroes_counter, ac_block) = ac_decode(stream)
-        
-        # Every AC block ends with (0,0) huffman code
-        end_of_block = zeroes_counter == 0 and ac_block == 0
-        
-        if(end_of_block is False):
-            zeroes = [0] * zeroes_counter
-            block_zigzag += zeroes + [ac_block]
-            continue; # end the iteration here. its not end of block
-
-        # end of block here. add the remaining zeroes and undo zigzag
-        trailing_zeros_block = [0] * (64 - len(block_zigzag))
-        block_zigzag += trailing_zeros_block
-
-        # Undo zigzag
-        block_zigzag = np.array(block_zigzag).flatten(order='F')
-        block_8x8 = block_zigzag[ind_O].reshape((8,8),order='F')
-
-        # Undo quantization
-        dequant = dequantize(block_8x8)
-
-        # reverse idct
-        original_block = calc_idct(dequant)
-        
-        print(original_block)
+    
     
 
     """
@@ -221,6 +186,41 @@ def parse_image_data(image_data):
     """
 
 
+def decode_block(stream, dc_dpcm):
+    block_zigzag = []
+    dc_detected = 0
+    while len(block_zigzag) < (8*8):
+        if(len(block_zigzag) < 1):
+            dc_block = dc_decode(stream)
+            dc_dpcm = dc_dpcm + dc_block
+            block_zigzag += [dc_dpcm]
+            continue; # first dc achieved, end the iteration here
+
+        (zeroes_counter, ac_block) = ac_decode(stream)
+        
+        # Every AC block ends with (0,0) huffman code
+        end_of_block = zeroes_counter == 0 and ac_block == 0
+        
+        if(end_of_block is False):
+            zeroes = [0] * zeroes_counter
+            block_zigzag += zeroes + [ac_block]
+            continue; # end the iteration here. its not end of block
+
+        # end of block here. add the remaining zeroes and undo zigzag
+        trailing_zeros_block = [0] * (64 - len(block_zigzag))
+        block_zigzag += trailing_zeros_block
+
+        # Undo zigzag
+        block_zigzag = np.array(block_zigzag).flatten(order='F')
+        block_8x8 = block_zigzag[ind_O].reshape((8,8),order='F')
+
+        # Undo quantization
+        dequant = dequantize(block_8x8)
+
+        # reverse idct
+        original_block = calc_idct(dequant)
+        
+        return (original_block, dc_dpcm)
             
 
 start_of_scan = 0
