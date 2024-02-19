@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from tables import K3,K5, quality_factor, reverse_K3, reverse_K5, lookup_table
+from blocks.tables import K3,K5, quality_factor, reverse_K3, reverse_K5, lookup_table
 from bin_utils import  get_bin_repr, bin_string_to_arr,bit_array_to_int
 from executiontime import printexecutiontime, LIGHBLUE
 

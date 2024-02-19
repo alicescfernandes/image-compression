@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from tables import K1, quality_factor
+from blocks.tables import K1, quality_factor
 
 # TODO: Temp fix é meter isto em uint8
 def quantize(block, quality=90):

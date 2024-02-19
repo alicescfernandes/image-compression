@@ -4,14 +4,15 @@ from time import time
 from math import sqrt
 from executiontime import printexecutiontime, LIGHBLUE
 
-from tables import ind_O,ind_Z
-from dct import calc_dct, calc_idct
-from quant import quantize, dequantize
-from encode import dc_encode, ac_encode,dc_decode, ac_decode
-from stream import Stream, bin_to_byte,byte_to_bin
+from blocks.tables import ind_O,ind_Z
+from blocks.dct import calc_dct, calc_idct
+from blocks.quant import quantize, dequantize
+from blocks.encode import dc_encode, ac_encode,dc_decode, ac_decode
+from stream import Stream
 from bin_utils import int_to_bit_array
-# IDEA: Separate the processing in threads and get back the data in order
 
+# IDEA: Separate the processing in threads and get back the data in order
+# IDEIA: Encode Cb and Cr. Read about this
 
 input = "sources/balls.tiff"
 # input = "sources/16x16.tiff"
@@ -108,7 +109,6 @@ def encode_image(image):
 
     bytes_array = [bits_to_bytes.trailing_zeros] + bytes_array
     output_file.write(bytearray(bytes_array))
-
 
 # shape: : (H, W, D) 
 @printexecutiontime("Decoding Image took {0}", color=LIGHBLUE)
