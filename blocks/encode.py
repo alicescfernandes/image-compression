@@ -45,17 +45,17 @@ def ac_encode(ac_coef):
     for n in ac_coef:
         if(n == 0):
             if(zeroes_counter == 15):
-                rlc_code_huffman = rlc_code_huffman + bin_string_to_arr(K5[(15, 0)])
+                rlc_code_huffman = rlc_code_huffman + K5[(15, 0)]
                 zeroes_counter = 0;
             else:
                 zeroes_counter = zeroes_counter+1;
         
         else:
             (size, binary_repr) = get_bin_repr(n)
-            rlc_code_huffman = rlc_code_huffman + bin_string_to_arr(K5[(zeroes_counter, size)]) + binary_repr
+            rlc_code_huffman = rlc_code_huffman + K5[(zeroes_counter, size)] + binary_repr
             zeroes_counter = 0
 
-    rlc_code_huffman = rlc_code_huffman + bin_string_to_arr(K5[(0, 0)])
+    rlc_code_huffman = rlc_code_huffman + K5[(0, 0)]
 
     return rlc_code_huffman
 
