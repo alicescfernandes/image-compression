@@ -35,7 +35,9 @@ def ac_encode(ac_coef):
     # we dont need to encode zeroes, the decoder can pad blocks on decoding, and this logic saves processing time
     ac_reverse = ac_coef[::-1]
     ac_reverse = [v != 0 for v in ac_reverse ]
-    last_true = len(ac_reverse) - ac_reverse.index(True)
+    last_true = 0
+    if(True in ac_reverse):
+        last_true = len(ac_reverse) - ac_reverse.index(True)
 
     if(last_true > 0):
         ac_coef = ac_coef[0:last_true]

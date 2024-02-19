@@ -17,7 +17,7 @@ def byte_to_bin(value):
         remainder = value % 2
         value = value // 2
         bit_repr = bit_repr + [remainder]
-    return bit_repr
+    return bit_repr[::-1]
 
 BYTE_TO_BIT = 0
 BIT_TO_BYTE = 1,
@@ -63,7 +63,7 @@ class Stream():
 
         # pad the 0s to align to 8bits
         leading_zeroes =  [0] * (8 - len(bit_repr))
-        self.buffer = leading_zeroes+bit_repr[::-1]
+        self.buffer = leading_zeroes+bit_repr
 
     
     def convert_to_byte(self, value):
