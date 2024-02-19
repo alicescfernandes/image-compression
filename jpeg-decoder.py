@@ -2,8 +2,10 @@ from struct import unpack
 import codecs
 import numpy as np
 # https://d33wubrfki0l68.cloudfront.net/bdc1363abbd5744200ec5283d4154e55143df86c/8c624/images/decoding_jpeg/jpegrgb_dissected.png
-from HuffmanTable import HuffmanTable
-from Stream import Stream
+# from HuffmanTable import HuffmanTable
+from classes.stream import Stream
+from blocks.encode import dc_encode, ac_encode,dc_decode, ac_decode
+
 
 # todo: make a class out of this
 # todo: only works for luma grayscale
@@ -89,11 +91,12 @@ def parse_huffman(data):
     
     # todo: take the symbols and their lengths and rebuild the huffman tree
     # todo: not understanding this logic
-    hf = HuffmanTable()
-    hf.GetHuffmanBits(lengths, symbols)
+    # hf = HuffmanTable()
+    # hf.GetHuffmanBits(lengths, symbols)
 
     # affect global variables
-    huffman_tables[(huffman_table_type,huffman_table_dest)] = hf
+    # huffman_tables[(huffman_table_type,huffman_table_dest)] = hf
+    huffman_tables[(huffman_table_type,huffman_table_dest)] = []
 
 def parse_start_of_frame(sof):
     hdr, height, width, components = unpack(">BHHB",sof[0:6])
@@ -135,21 +138,28 @@ def parse_image_data(image_data):
     
     oldlumdccoeff, oldCbdccoeff, oldCrdccoeff = 0, 0, 0
 
-    st = Stream(image_data)
+    stream = Stream(image_data,0)
+    dc_block = dc_decode(stream)
+
+    ac_block1 = ac_decode(stream)
+    ac_block2 = ac_decode(stream)
 
     
     print(huffman_tables)
     print(quant_tables)
     print(quant_tables_mapping)
+    print("dc_block",dc_block)
+    
+    print("ac_block",ac_block1)
+    print("ac_block",ac_block2)
 
 
-
-    code = huffman_tables[('0','0')].GetCode(st)
-    bits = st.GetBitN(code)
-    print("code",code)
-    print("bits",bits)
-    dccoeff = DecodeNumber(code, bits)
-    print(dccoeff)
+    #code = huffman_tables[('0','0')].GetCode(st)
+    #bits = st.GetBitN(code)
+    #print("code",code)
+    #print("bits",bits)
+    #dccoeff = DecodeNumber(code, bits)
+    #print(dccoeff)
 
     """
     todo: For each 8x8 pixel
@@ -162,10 +172,6 @@ def parse_image_data(image_data):
         - Calculate an IDCT on the dequant data
     """
 
-
-    for y in range(shape[IMG_HEIGHT] // 8):
-        for x in range(shape[IMG_WIDTH] f// 8):
-            """ """
 
             
 
