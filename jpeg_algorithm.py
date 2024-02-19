@@ -61,7 +61,7 @@ def decode_header():
 
 @printexecutiontime("Encoding Image took {0}", color=LIGHBLUE)
 def encode_image(image):
-    #wipe temp file and open file
+    # wipe temp file and open file
     open(output_name, 'w').close()
     output_file = open(output_name, mode="ab")
     last_dc = 0
@@ -105,18 +105,12 @@ def encode_image(image):
         end = bits_to_bytes.eof()
         bytes_array += [byte]
     
-    
-
-    bytes_array = [bits_to_bytes.trailing_zeros] + bytes_array
     output_file.write(bytearray(bytes_array))
 
 # shape: : (H, W, D) 
 @printexecutiontime("Decoding Image took {0}", color=LIGHBLUE)
 def decode_image():
     input_file = open(output_name, mode="rb")
-
-    # First byte is the trailing zeroes. Cut them from the actual bit stream or exclude them from the end (if end of file is reached)
-    trailing_zeros = int.from_bytes(input_file.read(1))
 
     # 2 bytes for width and 2 more for height
     height = int.from_bytes(input_file.read(2))
