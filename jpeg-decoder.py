@@ -142,9 +142,14 @@ def parse_image_data(image_data):
     (width, height) = shape
     total_blocks = (height // 8) * (width // 8)
     
+    for y in range(height//8):
+        for x in range(width//8):
+            dpcm_luma = decode_block(stream,dpcm_luma,quant_tables[QUANT_DEST_LUMA], 'LUMA', 8)
+            dpcm_cb = decode_block(stream,dpcm_cb,quant_tables[QUANT_DEST_CHROMA], 'LUMA', 4)
+            #dpcm_cr = decode_block(stream,dpcm_cr,quant_tables[QUANT_DEST_CHROMA], 'LUMA', 4)
 
-    dpcm_luma = decode_block(stream,dpcm_luma,quant_tables[QUANT_DEST_LUMA], 'LUMA')
-    decode_block(stream,dpcm_cb,quant_tables[QUANT_DEST_CHROMA],'')    
+            print()
+            exit()
 
     """
     dc_block = dc_decode(stream)
@@ -181,10 +186,11 @@ def parse_image_data(image_data):
     """
 
 
-def decode_block(stream, dc_dpcm, quantization_table, block_type):
+def decode_block(stream, dc_dpcm, quantization_table, block_type, block_size = 8):
     block_zigzag = []
     dc_detected = 0
-    while len(block_zigzag) < (8*8):
+    total_blocks = block_size*block_size
+    while len(block_zigzag) < total_blocks:
         if(len(block_zigzag) < 1):
             dc_block = dc_decode(stream)
             dc_dpcm = dc_dpcm + dc_block
@@ -195,19 +201,19 @@ def decode_block(stream, dc_dpcm, quantization_table, block_type):
         
         # Every AC block ends with (0,0) huffman code
         end_of_block = zeroes_counter == 0 and ac_block == 0
-        
+        print(zeroes_counter, ac_block)
         if(end_of_block is False):
             zeroes = [0] * zeroes_counter
             block_zigzag += zeroes + [ac_block]
             continue; # end the iteration here. its not end of block
-
+        print(2)
         # end of block here. add the remaining zeroes and undo zigzag
-        trailing_zeros_block = [0] * (64 - len(block_zigzag))
+        trailing_zeros_block = [0] * (total_blocks - len(block_zigzag))
         block_zigzag += trailing_zeros_block
 
         # Undo zigzag
         block_zigzag = np.array(block_zigzag).flatten(order='F')
-        block_8x8 = block_zigzag[ind_O].reshape((8,8),order='F')
+        block_8x8 = block_zigzag[ind_O].reshape((block_size,block_size),order='F')
 
         # Undo quantization
         dequant = dequantize_no_quality(block_8x8, quantization_table)
@@ -215,9 +221,8 @@ def decode_block(stream, dc_dpcm, quantization_table, block_type):
         # reverse idct
         original_block = calc_idct(dequant)
         
-        if (block_type == "LUMA"):
-            print(original_block)
-        return dc_dpcm
+        print(original_block)
+    return dc_dpcm
         #return (original_block, dc_dpcm)
             
 
