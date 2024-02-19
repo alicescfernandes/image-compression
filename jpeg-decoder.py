@@ -9,7 +9,7 @@ from classes.stream import Stream
 from blocks.encode import dc_encode, ac_encode,dc_decode, ac_decode
 from blocks.tables import ind_O,ind_Z
 from blocks.dct import calc_dct, calc_idct
-from blocks.quant import quantize, dequantize
+from blocks.quant import quantize, dequantize_no_quality
 from blocks.encode import dc_encode, ac_encode,dc_decode, ac_decode
 from classes.stream import Stream
 from bin_utils import int_to_bit_array
@@ -72,7 +72,7 @@ def parse_quantization_table(quant):
     [destination, *quant_factors] = unpack(">"+table, quant[0:65])    
 
     # affect global variables
-    quant_tables[destination] = quant_factors
+    quant_tables[destination] = np.array(quant_factors).reshape((8,8))
     
 
 def parse_header(header):
@@ -127,14 +127,6 @@ def parse_scan(sof):
     global components 
     components = components_sof
 
-
-def DecodeNumber(code, bits):
-    l = 2**(code-1)
-    if bits>=l:
-        return bits
-    else:
-        return bits-(2*l-1)
-
 def parse_image_data(image_data):
     
     # remove \x00 after \xff
@@ -143,15 +135,16 @@ def parse_image_data(image_data):
     # remove end of image marker
     image_data = image_data[:-2]
     
-    oldlumdccoeff, oldCbdccoeff, oldCrdccoeff = 0, 0, 0
+    dpcm_luma, dpcm_cb, dpcm_cr = 0, 0, 0
 
     stream = Stream(image_data,0)
 
     (width, height) = shape
     total_blocks = (height // 8) * (width // 8)
     
-    
-    
+
+    dpcm_luma = decode_block(stream,dpcm_luma,quant_tables[QUANT_DEST_LUMA], 'LUMA')
+    decode_block(stream,dpcm_cb,quant_tables[QUANT_DEST_CHROMA],'')    
 
     """
     dc_block = dc_decode(stream)
@@ -188,7 +181,7 @@ def parse_image_data(image_data):
     """
 
 
-def decode_block(stream, dc_dpcm):
+def decode_block(stream, dc_dpcm, quantization_table, block_type):
     block_zigzag = []
     dc_detected = 0
     while len(block_zigzag) < (8*8):
@@ -217,12 +210,15 @@ def decode_block(stream, dc_dpcm):
         block_8x8 = block_zigzag[ind_O].reshape((8,8),order='F')
 
         # Undo quantization
-        dequant = dequantize(block_8x8)
+        dequant = dequantize_no_quality(block_8x8, quantization_table)
 
         # reverse idct
         original_block = calc_idct(dequant)
         
-        return (original_block, dc_dpcm)
+        if (block_type == "LUMA"):
+            print(original_block)
+        return dc_dpcm
+        #return (original_block, dc_dpcm)
             
 
 start_of_scan = 0
