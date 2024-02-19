@@ -12,7 +12,7 @@ from classes.stream import Stream
 from bin_utils import int_to_bit_array
 
 # IDEA: Separate the processing in threads and get back the data in order
-# IDEIA: Encode Cb and Cr. Read about this
+# IDEA: Encode Cb and Cr. Read about this
 
 input = "sources/balls.tiff"
 # input = "sources/16x16.tiff"
@@ -43,21 +43,11 @@ def encode_header():
     
     return bits
 
-def decode_header():
-    bits = []
-    width = image_shape[0]
-    height = image_shape[1]
-    
-    bits_width = int_to_bit_array(width, 16)
-    bits_height = int_to_bit_array(height, 16)
-    bits_size = int_to_bit_array(16,8)
-    
-    end_of_header1 = int_to_bit_array(255)
-    end_of_header2 = int_to_bit_array(4)
-    
-    bits = bits_width + bits_height
-    
-    return bits
+def decode_header(input_file):
+    # 2 bytes for width and 2 more for height
+    height = int.from_bytes(input_file.read(2))
+    width = int.from_bytes(input_file.read(2))
+    return (height,width)
 
 @printexecutiontime("Encoding Image took {0}", color=LIGHBLUE)
 def encode_image(image):
@@ -111,10 +101,9 @@ def encode_image(image):
 @printexecutiontime("Decoding Image took {0}", color=LIGHBLUE)
 def decode_image():
     input_file = open(output_name, mode="rb")
+    
+    (height,width) = decode_header(input_file)
 
-    # 2 bytes for width and 2 more for height
-    height = int.from_bytes(input_file.read(2))
-    width = int.from_bytes(input_file.read(2))
     total_blocks = (height // 8) * (width // 8)
 
     # Keep reference for DC DPCM coding
