@@ -1,6 +1,8 @@
 # https://d33wubrfki0l68.cloudfront.net/bdc1363abbd5744200ec5283d4154e55143df86c/8c624/images/decoding_jpeg/jpegrgb_dissected.png
 # https://yasoob.me/posts/understanding-and-writing-jpeg-decoder-in-python/#decoding-the-quantization-table
 # https://practicalpython.yasoob.me/chapter10
+# https://www.thewebmaster.com/jpeg-definitive-guide/
+# https://github.com/katieshiqihe/image_compression/blob/main/main.py
 
 from struct import unpack
 import codecs
@@ -57,7 +59,8 @@ IMG_HEIGHT = 1
 
 #f = open("sources/flower-luma-gray.jpg", "rb")
 #f = open("sources/house-rgb-gray.jpg", "rb")
-f = open("sources/16x16.jpg", "rb")
+#f = open("sources/16x16.jpg", "rb")
+f = open("sources/balls_32.jpg", "rb")
 
 
 quant_tables =  {}
@@ -73,7 +76,6 @@ def parse_quantization_table(quant):
     [destination, *quant_factors] = unpack(">"+table, quant[0:65])    
 
     # affect global variables
-    print(np.array(quant_factors).reshape((8,8)))
     quant_tables[destination] = quant_factors
     
 
@@ -117,6 +119,9 @@ def parse_start_of_frame(sof):
     quantization_tables_samples = components_unpacked[COMPONENT_QUANT_TABLE::2] # every the third element (index+) every three indexes we have the quant table for the component
     print(precision, components,components_unpacked)
 
+    for k in range(0,9,3):
+        (image_id, sample, quant_table) = components_unpacked[k:k+3]
+        print(image_id, int_to_bit_array(sample), quant_table)
     # Affect global variables
     global shape
     shape = (width,height)

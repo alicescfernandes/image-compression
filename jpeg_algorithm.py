@@ -1,3 +1,5 @@
+# https://medium.com/@sddkal/chroma-subsampling-in-numpy-47bf2bb5af83
+
 import cv2
 import numpy as np
 from time import time
@@ -13,7 +15,7 @@ from bin_utils import int_to_bit_array
 
 # IDEA: Separate the processing in threads and get back the data in order
 # IDEA: Encode Cb and Cr. Read about this
-
+# IDEA: Pad uneven with 8's
 input = "sources/balls.tiff"
 # input = "sources/16x16.tiff"
 # input = "sources/flower-luma-gray.jpg"
