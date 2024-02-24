@@ -14,7 +14,7 @@ from bin_utils import int_to_bit_array
 # IDEA: Separate the processing in threads and get back the data in order
 # IDEA: Encode Cb and Cr. Read about this
 
-input = "sources/16x16.tiff"
+input = "sources/balls_16.jpg"
 
 # Convert to YCbCr (YUV)
 input_rgb = cv2.imread(input)
@@ -31,10 +31,7 @@ def encode_image(y,cb,cr):
             cb_slice = cb[l:l+8,c:c+8]
             cr_slice = cr[l:l+8,c:c+8]
 
-            print("y",y_slice)
-            print("cb",cb_slice)
-            print("cr",cr_slice)
-            exit()
+            print(y_slice)
 
 
 encode_image(y,cb,cr)

@@ -3,6 +3,7 @@
 # https://practicalpython.yasoob.me/chapter10
 # https://www.thewebmaster.com/jpeg-definitive-guide/
 # https://github.com/katieshiqihe/image_compression/blob/main/main.py
+# https://stackoverflow.com/questions/8748671/jpeg-restart-markers
 
 from struct import unpack
 import codecs
@@ -16,6 +17,7 @@ from blocks.quant import quantize, dequantize_no_quality
 from blocks.encode import dc_encode, ac_encode,dc_decode, ac_decode
 from classes.stream import Stream
 from bin_utils import int_to_bit_array
+import copy
 
 # todo: make a class out of this
 # todo: only works for luma grayscale
@@ -24,6 +26,7 @@ START_OF_FRAME = b'\xff\xc0'
 APPLICATION_DEFAULT_HEADER = b'\xff\xe0'
 QUANTIZATION_TABLE = b'\xff\xdb'
 START_OF_IMAGE = b'\xff\xd8'
+APP_SEGMENT = b'\xff\xe1'
 DEFINE_HUFFMAN_TABLE = b'\xff\xc4'
 START_OF_SCAN = b'\xff\xda'
 END_OF_IMAGE = b'\xff\xd9'
@@ -36,6 +39,8 @@ markers[START_OF_FRAME]= "Start of Frame"
 markers[DEFINE_HUFFMAN_TABLE]= "Define Huffman Table"
 markers[START_OF_SCAN]= "Start of Scan"
 markers[END_OF_IMAGE]= "End of Image"
+markers[END_OF_IMAGE]= "End of Image"
+markers[APP_SEGMENT]= "App Segment"
 
 # Quantization constants
 QUANT_DEST_LUMA = 0
@@ -52,6 +57,9 @@ HUFFMAN_AC_TABLE = 1
 COMPONENT_ID = 0
 COMPONENT_SAMPLE_FACTOR = 1
 COMPONENT_QUANT_TABLE = 2
+COMPONENT_Y = 1
+COMPONENT_CB = 2
+COMPONENT_CR = 3
 
 # image shape constants
 IMG_WIDTH = 0
@@ -60,7 +68,7 @@ IMG_HEIGHT = 1
 #f = open("sources/flower-luma-gray.jpg", "rb")
 #f = open("sources/house-rgb-gray.jpg", "rb")
 #f = open("sources/16x16.jpg", "rb")
-f = open("sources/balls_32.jpg", "rb")
+f = open("sources/balls_16.jpg", "rb")
 
 
 quant_tables =  {}
@@ -68,47 +76,49 @@ huffman_tables =  {}
 quant_tables_mapping = []
 shape = ()
 components = 0
+components_info = {}
 
-
+# Quant table is in zig-zag order
 def parse_quantization_table(quant):
-    """ """
-    table = "".join(['b'] * 65) # replicates "b" 64 times
-    [destination, *quant_factors] = unpack(">"+table, quant[0:65])    
+    quant_copy = copy.copy(quant)
 
-    # affect global variables
-    quant_tables[destination] = quant_factors
-    
+    while(len(quant_copy) > 0):
+        table = "".join(['b'] * 65) # replicates "b" 64 times
+        [destination, *quant_factors] = unpack(">"+table, quant_copy[0:65])    
+
+        quant_copy = quant_copy[65::]
+        # quant_tables[destination] = quant_factors
+        quant_tables[destination] = []
 
 def parse_header(header):
     """ """
     unpacked = unpack(">ccccbbbbhhbb", header[0:14])
 
-def parse_huffman(data):
+def parse_huffman(data_original):
     # 1 byte for header, 
     # 16 bytes for huffman. has the codes the amount of encoded codes per length, from length 1 to length 16
     # something like lengths[0] would be the amount of huffman codes of 1 bit  (x codes of this type)
-    # something like lengths[2] would be the amount of huffman codes of 2 bits  (y codes of this type)
-    [header, *lengths] = unpack(">bbbbbbbbbbbbbbbbb", data[0:17]) 
-    # get bitstring of the header byte
-    header_bitstring = "{:08b}".format(header)
+    # something like lengths[2] would be the amount of huffman codes of 2 bits  (y codes of this type) 
 
-    huffman_table_type = header_bitstring[3] # bit 4 is the type of table
-    huffman_table_dest = header_bitstring[7] # bit 8 is the destination of table
-    
-    print(huffman_table_type)
-    print(huffman_table_dest)
-    # after the codes, we have the symbols used
-    total_number = np.sum(lengths)
-    symbols = unpack("B"*total_number, data[17:17+total_number])
-    
-    # todo: take the symbols and their lengths and rebuild the huffman tree
-    # todo: not understanding this logic
-    # hf = HuffmanTable()
-    # hf.GetHuffmanBits(lengths, symbols)
+    data = copy.copy(data_original)
 
-    # affect global variables
-    # huffman_tables[(huffman_table_type,huffman_table_dest)] = hf
-    huffman_tables[(huffman_table_type,huffman_table_dest)] = []
+    while(len(data) > 0):
+        [header, *lengths] = unpack(">bbbbbbbbbbbbbbbbb", data[0:17]) 
+        
+        # get bitstring of the header byte
+        header_bitstring = "{:08b}".format(header)
+
+        huffman_table_type = header_bitstring[3] # bit 4 is the type of table
+        huffman_table_dest = header_bitstring[7] # bit 8 is the quant destination of table
+        # after the codes, we have the symbols used
+        total_number = np.sum(lengths)
+        symbols = unpack("B"*total_number, data[17:17+total_number])
+        
+        # affect global variables
+        # huffman_tables[header] = list(symbols)
+        huffman_tables[(huffman_table_type, huffman_table_dest)] = []
+        data = data[17+total_number::]
+    print(huffman_tables)
 
 def parse_start_of_frame(sof):
     precision, height, width, components = unpack(">BHHB",sof[0:6])
@@ -117,19 +127,19 @@ def parse_start_of_frame(sof):
     components_unpacked = unpack(">"+components_unpack_format,sof[6:])  #  foramt: [id, sample,quant_table,id, sample,quant_table,id, sample,quant_table]
     quantization_tables_ids = components_unpacked[COMPONENT_QUANT_TABLE::3] # every the third element (index+) every three indexes we have the quant table for the component
     quantization_tables_samples = components_unpacked[COMPONENT_QUANT_TABLE::2] # every the third element (index+) every three indexes we have the quant table for the component
-    print(precision, components,components_unpacked)
 
     for k in range(0,9,3):
         (image_id, sample, quant_table) = components_unpacked[k:k+3]
-        print(image_id, int_to_bit_array(sample), quant_table)
+        components_info[image_id] = {
+            "id":image_id,
+            "sample":sample,
+            "quant_table":quant_table,
+        }
+
+
     # Affect global variables
     global shape
     shape = (width,height)
-
-    global quant_tables_mapping
-    quant_tables_mapping = quantization_tables_ids
-    exit()
-
 
 def parse_scan(sof):
     [components_sof] = unpack(">B", sof[0:1])
@@ -151,15 +161,16 @@ def parse_image_data(image_data):
 
     (width, height) = shape
     total_blocks = (height // 8) * (width // 8)
-    
-    for y in range(height//8):
-        for x in range(width//8):
-            dpcm_luma = decode_block(stream,dpcm_luma,quant_tables[QUANT_DEST_LUMA], 'LUMA', 8)
-            dpcm_cb = decode_block(stream,dpcm_cb,quant_tables[QUANT_DEST_CHROMA], 'LUMA', 4)
-            #dpcm_cr = decode_block(stream,dpcm_cr,quant_tables[QUANT_DEST_CHROMA], 'LUMA', 4)
 
-            print()
-            exit()
+    
+    dpcm_luma = decode_block(stream,dpcm_luma,quant_tables[QUANT_DEST_LUMA], 'LUMA')
+    print("dpcm_luma",dpcm_luma)
+
+    #for y in range(height//8):
+    #    for x in range(width//8):
+    #        dpcm_cb = decode_block(stream,dpcm_cb,quant_tables[QUANT_DEST_CHROMA], 'LUMA', 4)
+    #        #dpcm_cr = decode_block(stream,dpcm_cr,quant_tables[QUANT_DEST_CHROMA], 'LUMA', 4)
+
 
     """
     dc_block = dc_decode(stream)
@@ -167,22 +178,10 @@ def parse_image_data(image_data):
     ac_block1 = ac_decode(stream)
     ac_block2 = ac_decode(stream)
 
-    
-    print(huffman_tables)
-    print(quant_tables)
-    print(quant_tables_mapping)
-    print("dc_block",dc_block)
-
-    print("ac_block",ac_block1)
-    print("ac_block",ac_block2)
-    """
 
     #code = huffman_tables[('0','0')].GetCode(st)
     #bits = st.GetBitN(code)
-    #print("code",code)
-    #print("bits",bits)
-    #dccoeff = DecodeNumber(code, bits)
-    #print(dccoeff)
+    #dccoeff = DecodeNumber(code, bit    """
 
     """
     todo: For each 8x8 pixel
@@ -194,7 +193,6 @@ def parse_image_data(image_data):
         - Dequantize
         - Calculate an IDCT on the dequant data
     """
-
 
 def decode_block(stream, dc_dpcm, quantization_table, block_type, block_size = 8):
     block_zigzag = []
@@ -208,7 +206,6 @@ def decode_block(stream, dc_dpcm, quantization_table, block_type, block_size = 8
             continue; # first dc achieved, end the iteration here
 
         (zeroes_counter, ac_block) = ac_decode(stream)
-        
         # Every AC block ends with (0,0) huffman code
         end_of_block = zeroes_counter == 0 and ac_block == 0
         if(end_of_block is False):
@@ -230,9 +227,7 @@ def decode_block(stream, dc_dpcm, quantization_table, block_type, block_size = 8
         # reverse idct
         original_block = calc_idct(block_8x8)
         
-        print(original_block)
 
-    return dc_dpcm
         #return (original_block, dc_dpcm)
             
 
@@ -258,17 +253,21 @@ while True:
             quant_luma_size = int.from_bytes(f.read(2)) - 2
             quant_luma_table = f.read(quant_luma_size)
             parse_quantization_table(quant_luma_table)
+            print(quant_tables)
 
         if(byte == START_OF_FRAME):
             sof_size = int.from_bytes(f.read(2)) - 2
             sof_data = f.read(sof_size)
             parse_start_of_frame(sof_data)
+            print(components_info)
+
 
         if(byte == DEFINE_HUFFMAN_TABLE):
             huffman_size = int.from_bytes(f.read(2)) - 2
             huffman_table = f.read(huffman_size)
             parse_huffman(huffman_table)
-        
+
+        """
         if(byte == START_OF_SCAN):
             scan_size = int.from_bytes(f.read(2)) - 2
             scan_data = f.read(scan_size)
@@ -277,3 +276,4 @@ while True:
             # reads the rest of the image. this is the image data
             image_data = f.read()
             parse_image_data(image_data)
+        """
