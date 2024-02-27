@@ -7,4 +7,6 @@ While i was taking my engeneering degree, i had a course that was focused on thi
 
 Obviously, this project is working with static pictures, but a video is more like moving pictures, but video is just an extension of images, and H264 follows the same encoding process, but adds more optimizations on top to save even more video. There are alot of repos that also do the JPEG encoding / decoding in full, but i was more interested in knowing what each block does.
 
+Currently this code only encodes the luma channel, but maybe one day i can get it to do the chroma channels aswell
+
 There are alot of resources that out there, but my favourite is https://github.com/leandromoreira/digital_video_introduction, which touches on the topics that this project implements and its easy to read.
